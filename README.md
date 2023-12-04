@@ -12,7 +12,8 @@ This repository contains the code for the Capstone Project GuideRNA. The goal of
 ## Installation
 To install the tool, clone the repository to your local machine. Then, run the following command in the terminal:
 ```bash
-pip install -r requirements.txt
+conda env create -f environment.yml
+conda activate dna
 ```
 This will install all the required packages for the tool to run.
 
