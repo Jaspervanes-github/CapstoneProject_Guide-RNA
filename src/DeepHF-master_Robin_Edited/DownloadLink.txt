@@ -1,0 +1,5 @@
+https://www.tbi.univie.ac.at/RNA/
+
+take windows installer then it will be in program files
+
+Direect link https://www.tbi.univie.ac.at/RNA/#pack_windows
