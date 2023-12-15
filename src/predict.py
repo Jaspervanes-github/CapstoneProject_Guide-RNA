@@ -1,8 +1,4 @@
-import torch
-from transformers import AutoTokenizer, AutoModel
-
-tokenizer = AutoTokenizer.from_pretrained("zhihan1996/DNABERT-2-117M", trust_remote_code=True)
-model = AutoModel.from_pretrained("zhihan1996/DNABERT-2-117M", trust_remote_code=True)
+from prediction_util import *
 
 dna = "ACGTAGCATCGGATCTATCTATCGACACTTGGTTATCGATCTACGAGCATCTCGTTAGC"
 dna_list = list(dna)
@@ -21,8 +17,14 @@ valid_windows = []
 for window in window_list:
     # Feed the window to DNAbert2
     if(True):
+        # if DNAbert2 returns a 1 for this window, add it to the valid_windows array
         valid_windows.append(window)
 
 # Feed valid_windows to DeepCristl
+result = []
+enzyme = 'esp'
+for window in valid_windows:
+    result.append(effciency_predict(dna.replace(os.linesep, ''), enzyme))
 
+print(result)
     
