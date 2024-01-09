@@ -98,14 +98,82 @@ def output_prediction(inputs, df, model_type='esp'):
 
 
 def effciency_predict(sequence, model_type='esp'):
+    #Remove weird characters
     sequence = sequence.strip()
+    print(sequence)
     import re
-    # 找出sequence后面20位之后含GG的index
+
+
     indexs = [m.start() for m in re.finditer( '(?=GG)', sequence ) if m.start() > 20]
+    Strand = []
     gRNA = []
     Cut_Pos = []
-    Strand = []
     PAM = []
+    
+    for i in indexs:
+        Strand.append( '+' )
+        gRNA.append( sequence[i - 21:i] )
+        Cut_Pos.append( i - 4 )
+        PAM.append( sequence[i - 1:i + 2] )
+
+    print("Before reverse")
+    print("Strand ",  Strand)
+    print("gRNAS Shape", len(gRNA))
+    print("gRNA ", gRNA)
+    print("Cut_Pos ", Cut_Pos)
+    print("PAM ", PAM)
+    print("\n")
+
+
+    sequence_complement = str( Seq.Seq( sequence ).reverse_complement() )
+
+    index_reverse = [m.start() for m in re.finditer( '(?=GG)', sequence_complement ) if m.start() > 20]
+
+    for i in index_reverse:
+        Strand.append( '-' )
+        gRNA.append( sequence_complement[i - 21:i] )
+        Cut_Pos.append( i - 4 )
+        PAM.append( sequence_complement[i - 1:i + 2] )
+
+    print("After reverse")
+    print("Strand ",  Strand)
+    print("gRNA ", gRNA)
+    print("gRNAS Shape", len(gRNA))
+    print("Cut_Pos ", Cut_Pos)
+    print("PAM ", PAM)
+    print("\n")
+
+    pandas.set_option( 'Precision', 5 )
+    df = pandas.DataFrame( {'Cut_Pos': Cut_Pos,
+                            'Strand': Strand,
+                            '21mer': gRNA,
+                            'PAM': PAM}, columns=['Strand', 'Cut_Pos', '21mer', 'PAM'] )
+    X,X_biofeat = get_embedding_data(df,feature_options)
+
+    print("After embedding")
+    print("X shape",  X.shape)
+    print("X ",  X)
+    print("X_biofeat ", X_biofeat)
+    print("\n")
+
+    print(df['21mer'][:5])
+    print("X ",  X[:5])
+
+    return output_prediction( [X,X_biofeat], df, model_type )
+
+
+def encode_only(sequence, model_type='esp'): #custom function for decoding data
+    #Remove weird characters
+    sequence = sequence.strip()
+    import re
+
+
+    indexs = [m.start() for m in re.finditer( '(?=GG)', sequence ) if m.start() > 20]
+    Strand = []
+    gRNA = []
+    Cut_Pos = []
+    PAM = []
+    
     for i in indexs:
         Strand.append( '+' )
         gRNA.append( sequence[i - 21:i] )
@@ -128,4 +196,5 @@ def effciency_predict(sequence, model_type='esp'):
                             '21mer': gRNA,
                             'PAM': PAM}, columns=['Strand', 'Cut_Pos', '21mer', 'PAM'] )
     X,X_biofeat = get_embedding_data(df,feature_options)
-    return output_prediction( [X,X_biofeat], df, model_type )
+
+    return X
