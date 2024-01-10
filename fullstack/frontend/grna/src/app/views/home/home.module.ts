@@ -4,6 +4,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { HomeComponent } from './home.component';
 import { InputComponent } from 'src/app/components/input/input.component';
 import { DataTableComponent } from 'src/app/components/data-table/data-table.component';
+import { InputModule } from 'src/app/components/input/input.module';
 
 const routes: Routes = [
   { path: '', component: HomeComponent }
@@ -12,11 +13,11 @@ const routes: Routes = [
 @NgModule({
   declarations: [
     HomeComponent,
-    InputComponent,
-    DataTableComponent
+    DataTableComponent,
   ],
   imports: [
     CommonModule,
+    InputModule,
     RouterModule.forChild(routes),
   ],
   exports: [RouterModule]

@@ -1,15 +1,17 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
+import { FormBuilder, Validators, FormGroup } from '@angular/forms';
 
 @Component({
   selector: 'app-input',
   templateUrl: './input.component.html',
   styleUrls: ['./input.component.css']
 })
-export class InputComponent implements OnInit {
+export class InputComponent {
+  dnaForm: FormGroup;
 
-  constructor() { }
-
-  ngOnInit(): void {
+  constructor(private fb: FormBuilder) {
+    this.dnaForm = this.fb.group({
+      dnaSequence: ['', [Validators.required, Validators.pattern('^[ATCGatcg]*$')]]
+    });
   }
-
 }
