@@ -125,12 +125,12 @@ class SupervisedDataset(Dataset):
             # data is in the format of [text, label]
             logging.warning("Perform single sequence classification...")
             texts = [d[0] for d in data]
-            labels = [int(d[1]) for d in data]
+            labels = [float(d[1]) for d in data]
         elif len(data[0]) == 3:
             # data is in the format of [text1, text2, label]
             logging.warning("Perform sequence-pair classification...")
             texts = [[d[0], d[1]] for d in data]
-            labels = [int(d[2]) for d in data]
+            labels = [float(d[2]) for d in data]
         else:
             raise ValueError("Data format not supported.")
         
@@ -153,6 +153,19 @@ class SupervisedDataset(Dataset):
             truncation=True,
         )
 
+        print("!!!   set   !!!")
+        pos_shapes = []
+
+        for i in range(len(output["input_ids"])):
+            if(pos_shapes.__contains__(output["input_ids"][i].shape)):
+                continue
+            else:
+                pos_shapes.append(output["input_ids"][i].shape)
+
+        print(pos_shapes)
+        print("!!!      !!!")
+
+
         self.input_ids = output["input_ids"]
         self.attention_mask = output["attention_mask"]
         self.labels = labels
@@ -164,7 +177,7 @@ class SupervisedDataset(Dataset):
     def __getitem__(self, i) -> Dict[str, torch.Tensor]:
         return dict(input_ids=self.input_ids[i], labels=self.labels[i])
 
-
+#runs between data loading ^^
 @dataclass
 class DataCollatorForSupervisedDataset(object):
     """Collate examples for supervised fine-tuning."""
@@ -173,14 +186,36 @@ class DataCollatorForSupervisedDataset(object):
 
     def __call__(self, instances: Sequence[Dict]) -> Dict[str, torch.Tensor]:
         input_ids, labels = tuple([instance[key] for instance in instances] for key in ("input_ids", "labels"))
+
+        #print("!!!      !!!")  
+        #print(type(input_ids)) list shape 8
+        #print(type(labels))    list shape 8
+        #print(input_ids[:10]) [tensor([   1, 3100,  115,   98,  504,    6,    2,    3,    3,    3]),
+        #print(labels[:10]) [0.1722376815528709,
+
+        # pos_shapes = []
+
+        # for i in range(len(input_ids)):
+        #     if(pos_shapes.__contains__(input_ids[i].shape)):
+        #         continue
+        #     else:
+        #         pos_shapes.append(input_ids[i].shape)
+
+        # print(pos_shapes)
+
+        # print("!!!      !!!")
+
         input_ids = torch.nn.utils.rnn.pad_sequence(
             input_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
         )
+        input_ids = input_ids.to("cuda:0")
         labels = torch.Tensor(labels).long()
+        labels = labels.to("cuda:0")
+
         return dict(
-            input_ids=input_ids,
-            labels=labels,
-            attention_mask=input_ids.ne(self.tokenizer.pad_token_id),
+            input_ids=input_ids.to("cuda:0"),
+            labels=labels.to("cuda:0"),
+            attention_mask=input_ids.ne(self.tokenizer.pad_token_id).to("cuda:0"),
         )
 
 """
@@ -223,6 +258,12 @@ def compute_metrics(eval_pred):
 
 
 def train():
+
+    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    print("&&&      &&&")
+    print(device)
+    print("&&&      &&&")
+
     parser = transformers.HfArgumentParser((ModelArguments, DataArguments, TrainingArguments))
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
@@ -235,6 +276,7 @@ def train():
         use_fast=True,
         trust_remote_code=True,
     )
+    
 
     if "InstaDeepAI" in model_args.model_name_or_path:
         tokenizer.eos_token = tokenizer.pad_token
@@ -252,13 +294,34 @@ def train():
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
 
 
-    # load model
+    print("&&&      &&&")
+    print(type(train_dataset.labels))
+    print(type(train_dataset.labels[0]))
+    print(train_dataset.labels[:5])
+    print("&&&      &&&")
+
+
+    print("!!!   last   !!!")
+    pos_shapes = []
+
+    for i in range(len(train_dataset.input_ids)):
+        if(pos_shapes.__contains__(train_dataset.input_ids[i].shape)):
+            continue
+        else:
+            pos_shapes.append(train_dataset.input_ids[i].shape)
+
+    print(pos_shapes)
+    print("!!!      !!!")
+
+    #load model
     model = transformers.AutoModelForSequenceClassification.from_pretrained(
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
         num_labels=train_dataset.num_labels,
         trust_remote_code=True,
     )
+
+    model.cuda()
 
     # configure LoRA
     if model_args.use_lora:
@@ -274,6 +337,8 @@ def train():
         model = get_peft_model(model, lora_config)
         model.print_trainable_parameters()
 
+
+
     # define trainer
     trainer = transformers.Trainer(model=model,
                                    tokenizer=tokenizer,
@@ -282,6 +347,9 @@ def train():
                                    train_dataset=train_dataset,
                                    eval_dataset=val_dataset,
                                    data_collator=data_collator)
+    
+
+
     trainer.train()
 
     if training_args.save_model:
