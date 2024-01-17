@@ -11,7 +11,7 @@ export class FooterComponent implements OnInit {
     {
       name: 'Jasper van Es',
       studentnumber: 'x',
-      image: 'https://avatars.githubusercontent.com/u/57483435?v=4',
+      image: 'https://media.licdn.com/dms/image/C4E03AQF_aSbIW7JPPg/profile-displayphoto-shrink_800_800/0/1648313371942?e=1710374400&v=beta&t=1tMzCdLoGsUCugCqyWwS_E9oIahpfiiI9oteLQOTzeo',
       imageLoaded: false
     },
     {
@@ -23,7 +23,7 @@ export class FooterComponent implements OnInit {
     {
       name: 'Robin Janse',
       studentnumber: 'x',
-      image: 'https://avatars.githubusercontent.com/u/58508244?v=4',
+      image: 'https://media.licdn.com/dms/image/D4D03AQGCwaCfYeRqog/profile-displayphoto-shrink_800_800/0/1699885645015?e=1710374400&v=beta&t=WjPxa9BFRxHA4zBbgP3rqOlwnl4vMwEtkHowBRDDh98',
       imageLoaded: false
     },
     {
