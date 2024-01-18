@@ -33,7 +33,7 @@ export class InputComponent {
 
     console.log(`http://localhost:${port}}/api/predictions`, `dna: ${dna}`);
 
-    this._httpClient.post<any>(`http://localhost:${port}}/api/predictions`, { dna }).subscribe(data => {
+    this._httpClient.post<any>(`http://127.0.0.1:8000/api/predictions/`, { dna }).subscribe(data => {
       console.log(data);
     });
   }

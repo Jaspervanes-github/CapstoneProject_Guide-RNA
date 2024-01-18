@@ -62,24 +62,28 @@ class PredictionListApiView(APIView):
 
         request_body["grna"] = twenty_mers
 
-        # Preprocess the 20-mers for the AI model
-        # Encode the 20-mers
-        dataloader = preprocess(twenty_mers)
+        # # Preprocess the 20-mers for the AI model
+        # # Encode the 20-mers
+        # dataloader = preprocess(twenty_mers)
 
-        # Load the AI model
-        model = transformers.AutoModelForSequenceClassification.from_pretrained("fullstack/backend/grna/grna_api/ai_model")
+        # # Load the AI model
+        # model = transformers.AutoModelForSequenceClassification.from_pretrained("fullstack/backend/grna/grna_api/ai_model")
 
-        # Make predictions
-        predictions = []
-        for batch in dataloader:
-            outputs = model(**batch)
-            predictions.append(outputs.logits)
-
-        request_body["predictions"] = [prediction.item() for prediction in predictions]
-
-        # Calculate the average score
-        score = sum(predictions) / len(predictions)
-        request_body["score"] = score.item()
+        # #Make predictions
+        # predictions = []
+        # for batch in dataloader:
+        #     outputs = model(**batch)
+        #     batch_predictions = outputs.logits.softmax(dim=-1)[:, 1].tolist()  # Get the efficiency score for each 20-mer in the batch
+        #     predictions.extend(batch_predictions)
+        
+        # # Attach the efficiency score to each 20-mer
+        # twenty_mers_with_scores = list(zip(twenty_mers, predictions))
+        
+        # request_body["predictions"] = twenty_mers_with_scores
+        
+        # # Calculate the average score
+        # score = sum(predictions) / len(predictions)
+        # request_body["score"] = score
         
         return Response(request_body, status=status.HTTP_201_CREATED)
 
