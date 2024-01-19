@@ -9,6 +9,8 @@ import { HttpClient } from '@angular/common/http';
 })
 export class InputComponent {
   dnaForm: FormGroup;
+  loading: boolean = false;
+  result: any;
 
   constructor(
     private fb: FormBuilder,
@@ -28,13 +30,18 @@ export class InputComponent {
   }
 
   submitPrediction() {
-    let port = 8000;
+    console.log(this.dnaSequence?.value);
+
+    let url: string = "http://127.0.0.1:8000/api/predictions/";
     let dna = this.dnaSequence?.value;
 
-    console.log(`http://localhost:${port}}/api/predictions`, `dna: ${dna}`);
+    this.loading = true;
 
-    this._httpClient.post<any>(`http://localhost:${port}}/api/predictions`, { dna }).subscribe(data => {
-      console.log(data);
-    });
+    this._httpClient
+        .post<any>(url, { dna })
+        .subscribe(data => {
+          this.loading = false;
+          this.result = data;
+        });
   }
 }

@@ -7,14 +7,39 @@ from rest_framework import permissions
 from torch.utils.data import DataLoader
 from transformers import DataCollatorWithPadding
 import transformers
-import re 
+import re
 
 from .serializers import PredictionSerializer
 from .models import Prediction
 
+import pandas as pd
+import datasets
+
+import os
+
 # Create your views here.
 class PredictionListApiView(APIView):
     permission_classes = [permissions.AllowAny]
+    tokenizer_path = "zhihan1996/DNABERT-2-117M"
+    model_path = "./best_model/checkpoint-4455"
+
+    tokenizer_var = transformers.AutoTokenizer.from_pretrained(
+        tokenizer_path,
+        model_max_length=100,
+        padding_side="right",
+        use_fast=True,
+        trust_remote_code=True
+    )
+    
+    model = transformers.AutoModelForSequenceClassification.from_pretrained(
+        model_path,
+        cache_dir=None,
+        num_labels=1,
+        trust_remote_code=True,
+    )
+
+    def tokenize_function(self, example):
+        return self.tokenizer_var(example["seq"], truncation=True)
 
     def get(self, request, *args, **kwargs):
         """
@@ -53,43 +78,44 @@ class PredictionListApiView(APIView):
                 {"error": "DNA sequence must only contain A, C, G, T, or N."},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         dna_length = len(dna)
         twenty_mers = []
-
+ 
         for i in range(dna_length - 19):
             twenty_mers.append(dna[i:i+20])
-
-        request_body["grna"] = twenty_mers
-
-        # Preprocess the 20-mers for the AI model
-        # Encode the 20-mers
-        dataloader = preprocess(twenty_mers)
-
-        # Load the AI model
-        model = transformers.AutoModelForSequenceClassification.from_pretrained("fullstack/backend/grna/grna_api/ai_model")
-
-        # Make predictions
-        predictions = []
-        for batch in dataloader:
-            outputs = model(**batch)
-            predictions.append(outputs.logits)
-
-        request_body["predictions"] = [prediction.item() for prediction in predictions]
-
-        # Calculate the average score
-        score = sum(predictions) / len(predictions)
-        request_body["score"] = score.item()
+ 
+        df_twenty_mers = pd.DataFrame({'seq' : twenty_mers})
+        raw_dataset = datasets.Dataset.from_pandas(df_twenty_mers)
+ 
+        tokenized_dataset = raw_dataset.map(self.tokenize_function, batched=True)
+        tokenized_dataset.set_format("torch")
+ 
+        y_preds = []
+       
+        for row in tokenized_dataset:
+            y_preds.append([
+                row['seq'], 
+                self.model(row["input_ids"].unsqueeze(0), row["attention_mask"].unsqueeze(0))[0].item()
+            ])
+           
+        df_y_preds = pd.DataFrame(y_preds, columns=["seq", "Prediction"])
+        df_y_preds.sort_values(by=['Prediction'], inplace=True, ascending=False)
+        print(df_y_preds)
         
+        # Sort by prediction score
+        df_y_preds.sort_values(by=['Prediction'], inplace=True, ascending=False)
+        df_y_preds.reset_index(drop=True, inplace=True)
+        df_y_preds.index += 1
+        df_y_preds.rename(columns={"Prediction": "score"}, inplace=True)
+
+        # Get the top 10 predictions
+        top_10 = df_y_preds.head(10)
+
+        request_body["top_10"] = top_10.to_dict(orient="records")
+        request_body["all_predictions"] = df_y_preds.to_dict(orient="records")
+
         return Response(request_body, status=status.HTTP_201_CREATED)
-
-def preprocess(twenty_mers):
-    tokenizer = transformers.AutoTokenizer.from_pretrained("fullstack/backend/grna/grna_api/ai_model")
-    tokens = tokenizer(twenty_mers, padding=True, truncation=True, return_tensors="pt")
-    dataloader = DataLoader(tokens, batch_size=1, collate_fn=DataCollatorWithPadding(tokenizer))
-
-    return dataloader
-
 
 class PredictionDetailApiView(APIView):
     permission_classes = [permissions.AllowAny]

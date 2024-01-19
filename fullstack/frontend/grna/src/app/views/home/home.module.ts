@@ -13,7 +13,6 @@ const routes: Routes = [
 @NgModule({
   declarations: [
     HomeComponent,
-    DataTableComponent,
   ],
   imports: [
     CommonModule,
