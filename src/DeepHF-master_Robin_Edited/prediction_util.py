@@ -58,9 +58,12 @@ def get_embedding_data(data, feature_options):
     df_biofeat = pd.DataFrame( data=biofeat, columns=feat_names )
     # sequence embedding representation
     X_1 = make_data( data['21mer'] )
+    print("X_1=", X_1)
     # biological feature reperesentation
     X_biofeat = np.array( df_biofeat )
     return X_1, X_biofeat
+
+
 def output_prediction_old(inputs, df, model_type='esp'):
     import os
     from sklearn.externals import joblib
@@ -88,7 +91,15 @@ def output_prediction(inputs, df, model_type='esp'):
         model = model_wt_t7
     elif model_type == 'hf':
         model = model_hf
+
+    print("inputs ", inputs)
+    print(type(inputs))
+    print(type(inputs[0]))
+    print(type(inputs[1]))
+    print(inputs[0].shape)
+    print(inputs[1].shape)
     Efficiency = model.predict( inputs )
+    #print("Pre eff = ", Efficiency)
     df['gRNA_Seq'] = df['21mer'].apply( lambda x: x[:-1] )
     df['Efficiency'] = np.clip( Efficiency, 0, 1 )
     r = model.predict([np.zeros((1, 22)),np.zeros((1,11))])
@@ -96,11 +107,36 @@ def output_prediction(inputs, df, model_type='esp'):
     df.reset_index( inplace=True )
     return df.sort_values( by='Efficiency', ascending=False )
 
+def custom_get_embedding_data_fast(rna): #fast way just get X for prediction
+    X = make_data( rna )
+
+    return X
+
+def custom_predict_fast(inputs, model_type='esp'): #custom function to only evaluate the model
+    import os
+    from sklearn.externals import joblib
+    from sklearn.linear_model import LinearRegression
+    #dir_path = os.path.dirname( os.path.realpath( __file__ ) )
+    #model_file = model_type + '_rnn.hd5'
+    #model_file_path = os.path.join( dir_path, model_file )
+    if model_type == 'esp':
+        model = model_esp
+    elif model_type == 'wt_u6':
+        model = model_wt_u6
+    elif model_type == 'wt_t7':
+        model = model_wt_t7
+    elif model_type == 'hf':
+        model = model_hf
+
+    Efficiency = model.predict( inputs )
+    
+    return Efficiency
+
 
 def effciency_predict(sequence, model_type='esp'):
     #Remove weird characters
     sequence = sequence.strip()
-    print(sequence)
+    #print(sequence)
     import re
 
 
@@ -116,13 +152,13 @@ def effciency_predict(sequence, model_type='esp'):
         Cut_Pos.append( i - 4 )
         PAM.append( sequence[i - 1:i + 2] )
 
-    print("Before reverse")
-    print("Strand ",  Strand)
-    print("gRNAS Shape", len(gRNA))
-    print("gRNA ", gRNA)
-    print("Cut_Pos ", Cut_Pos)
-    print("PAM ", PAM)
-    print("\n")
+    # print("Before reverse")
+    # print("Strand ",  Strand)
+    # print("gRNAS Shape", len(gRNA))
+    # print("gRNA ", gRNA)
+    # print("Cut_Pos ", Cut_Pos)
+    # print("PAM ", PAM)
+    # print("\n")
 
 
     sequence_complement = str( Seq.Seq( sequence ).reverse_complement() )
@@ -135,29 +171,32 @@ def effciency_predict(sequence, model_type='esp'):
         Cut_Pos.append( i - 4 )
         PAM.append( sequence_complement[i - 1:i + 2] )
 
-    print("After reverse")
-    print("Strand ",  Strand)
-    print("gRNA ", gRNA)
-    print("gRNAS Shape", len(gRNA))
-    print("Cut_Pos ", Cut_Pos)
-    print("PAM ", PAM)
-    print("\n")
+    # print("After reverse")
+    # print("Strand ",  Strand)
+    # print("gRNA ", gRNA)
+    # print("gRNAS Shape", len(gRNA))
+    # print("Cut_Pos ", Cut_Pos)
+    # print("PAM ", PAM)
+    # print("\n")
 
     pandas.set_option( 'Precision', 5 )
     df = pandas.DataFrame( {'Cut_Pos': Cut_Pos,
                             'Strand': Strand,
                             '21mer': gRNA,
                             'PAM': PAM}, columns=['Strand', 'Cut_Pos', '21mer', 'PAM'] )
+    
+    print(df)
+
     X,X_biofeat = get_embedding_data(df,feature_options)
 
-    print("After embedding")
-    print("X shape",  X.shape)
-    print("X ",  X)
-    print("X_biofeat ", X_biofeat)
-    print("\n")
+    # print("After embedding")
+    # print("X shape",  X.shape)
+    # print("X ",  X)
+    # print("X_biofeat ", X_biofeat)
+    # print("\n")
 
-    print(df['21mer'][:5])
-    print("X ",  X[:5])
+    # print(df['21mer'][:5])
+    # print("X ",  X[:5])
 
     return output_prediction( [X,X_biofeat], df, model_type )
 
