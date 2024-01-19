@@ -80,13 +80,17 @@ class PredictionListApiView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        dna_length = len(dna)
-        twenty_mers = []
+        indexs = [m.start() for m in re.finditer( '(?=GG)', dna ) if m.start() > 20]
+        gRNA = []
+        Cut_Pos = []
+        PAM = []
+       
+        for i in indexs:
+            gRNA.append( dna[i - 21:i] )
+            Cut_Pos.append( i - 4 )
+            PAM.append( dna[i - 1:i + 2] )
 
-        for i in range(dna_length - 19):
-            twenty_mers.append(dna[i:i+20])
-
-        df_twenty_mers = pd.DataFrame({'seq' : twenty_mers})
+        df_twenty_mers = pd.DataFrame({'seq' : gRNA, 'Cut_Pos' : Cut_Pos, 'PAM' : PAM, 'index' : indexs})
         raw_dataset = datasets.Dataset.from_pandas(df_twenty_mers)
 
         tokenized_dataset = raw_dataset.map(self.tokenize_function, batched=True)
@@ -97,9 +101,11 @@ class PredictionListApiView(APIView):
         for row in tokenized_dataset:
             # Include the start index with each prediction
             y_preds.append({
-                "index": y_preds.__len__(),
+                "index": row['index'],
                 "sequence": row['seq'],
-                "score": self.model(row["input_ids"].unsqueeze(0), row["attention_mask"].unsqueeze(0))[0].item()
+                "score": self.model(row["input_ids"].unsqueeze(0), row["attention_mask"].unsqueeze(0))[0].item(),
+                "pam": row['PAM'],
+                "cut_pos": row['Cut_Pos']
             })
 
         # Create a DataFrame from the predictions

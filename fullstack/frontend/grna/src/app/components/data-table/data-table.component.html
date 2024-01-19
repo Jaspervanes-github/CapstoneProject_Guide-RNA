@@ -10,67 +10,42 @@
 </div>
 
 <!-- Display details for hovered item -->
-<div *ngIf="hoveredItem" class="hover-details">
+<div *ngIf="hoveredItem && hoveredItem !== selectedItem" class="p-4 mt-4 border rounded-md">
+  <h3 class="text-lg font-semibold">Hovered Details:</h3>
   <p>Index: {{ hoveredItem.index }}</p>
   <p>Sequence: {{ hoveredItem.sequence }}</p>
   <p>Score: {{ hoveredItem.score | percent }}</p>
 </div>
 
-<table *ngIf="top_10" class="min-w-full divide-y divide-gray-200 mb-5">
+<!-- Table for ALL predictions with Pagination -->
+<table *ngIf="pagedItems.length > 0" class="min-w-full divide-y divide-gray-200 mb-20">
   <thead class="bg-gray-50">
     <tr>
       <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Index</th>
+      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PAM</th>
       <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sequence</th>
       <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
     </tr>
   </thead>
   <tbody class="bg-white divide-y divide-gray-200">
-    <tr *ngFor="let item of top_10" class="whitespace-nowrap"
+    <tr *ngFor="let item of pagedItems" class="whitespace-nowrap"
         [class.bg-gray-100]="hoveredItem === item || selectedItem === item"
         (mouseover)="hoveredItem = item"
         (mouseleave)="hoveredItem = null"
         (click)="selectedItem = item">
       <td class="px-6 py-4 text-sm text-gray-500">{{ item.index }}</td>
+      <td class="px-6 py-4 text-sm text-gray-500">{{ item.pam }}</td>
       <td class="px-6 py-4 text-sm text-gray-500">{{ item.sequence }}</td>
       <td class="px-6 py-4 text-sm text-gray-500">{{ item.score | percent }}</td>
     </tr>
   </tbody>
 </table>
 
-<!-- Also add a table for ALL strings, paginate it -->
-<table *ngIf="all_predictions" class="min-w-full divide-y divide-gray-200 mb-20">
-  <thead class="bg-gray-50">
-    <tr>
-      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Index</th>
-      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sequence</th>
-      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
-    </tr>
-  </thead>
-  <tbody class="bg-white divide-y divide-gray-200">
-    <tr *ngFor="let item of all_predictions" class="whitespace-nowrap"
-        [class.bg-gray-100]="hoveredItem === item || selectedItem === item"
-        (mouseover)="hoveredItem = item"
-        (mouseleave)="hoveredItem = null"
-        (click)="selectedItem = item">
-      <td class="px-6 py-4 text-sm text-gray-500">{{ item.index }}</td>
-      <td class="px-6 py-4 text-sm text-gray-500">{{ item.sequence }}</td>
-      <td class="px-6 py-4 text-sm text-gray-500">{{ item.score | percent }}</td>
-    </tr>
-  </tbody>
-</table>
-
-<!-- Display details for hovered item -->
-<!-- <div *ngIf="hoveredItem && hoveredItem !== selectedItem" class="p-4 mt-4 border rounded-md">
-  <h3 class="text-lg font-semibold">Hovered Details:</h3>
-  <p>Index: {{ hoveredItem.index }}</p>
-  <p>Sequence: {{ hoveredItem.sequence }}</p>
-  <p>Score: {{ hoveredItem.score | percent }}</p>
-</div> -->
-
-<!-- Display details for selected (clicked) item -->
-<!-- <div *ngIf="selectedItem" class="p-4 mt-4 border rounded-md">
-  <h3 class="text-lg font-semibold">Selected Details:</h3>
-  <p>Index: {{ selectedItem.index }}</p>
-  <p>Sequence: {{ selectedItem.sequence }}</p>
-  <p>Score: {{ selectedItem.score | percent }}</p>
-</div> -->
+<!-- Pagination Controls -->
+<div class="pagination-controls mb-20">
+  <button (click)="setPage(1)" [disabled]="currentPage === 1">First</button>
+  <button (click)="setPage(currentPage - 1)" [disabled]="currentPage === 1">Previous</button>
+  <span>Page {{currentPage}} of {{ceil(all_predictions.length / itemsPerPage)}}</span>
+  <button (click)="setPage(currentPage + 1)" [disabled]="currentPage === ceil(all_predictions.length / itemsPerPage)">Next</button>
+  <button (click)="setPage(ceil(all_predictions.length / itemsPerPage))" [disabled]="currentPage === ceil(all_predictions.length / itemsPerPage)">Last</button>
+</div>

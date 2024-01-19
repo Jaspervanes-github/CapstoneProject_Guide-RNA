@@ -39,3 +39,19 @@
     /* Additional styling as needed */
   }
   
+  .pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+  }
+  
+  .pagination-controls button {
+    margin: 0 5px;
+    padding: 5px 10px;
+  }
+  
+  .pagination-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }

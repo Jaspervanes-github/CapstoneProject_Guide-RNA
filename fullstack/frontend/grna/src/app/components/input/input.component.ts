@@ -11,6 +11,7 @@ export class InputComponent {
   dnaForm: FormGroup;
   loading: boolean = false;
   result: any;
+  error: any = null;
 
   constructor(
     private fb: FormBuilder,
@@ -33,15 +34,21 @@ export class InputComponent {
     console.log(this.dnaSequence?.value);
 
     let url: string = "http://127.0.0.1:8000/api/predictions/";
-    let dna = this.dnaSequence?.value;
+    let dna = this.dnaSequence?.value.toUpperCase();
 
     this.loading = true;
 
     this._httpClient
-        .post<any>(url, { dna })
-        .subscribe(data => {
+      .post<any>(url, { dna })
+      .subscribe(
+        data => {
           this.loading = false;
           this.result = data;
-        });
+        },
+        error => {
+          this.loading = false;
+          console.error('There was an error!', error);
+        }
+      );
   }
 }
