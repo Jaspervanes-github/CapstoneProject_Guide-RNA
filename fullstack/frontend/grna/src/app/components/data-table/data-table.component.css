@@ -1,0 +1,41 @@
+.dna-strand {
+    display: flex;
+    flex-wrap: wrap;
+    /* Other styling as needed */
+  }
+  
+  .nucleotide {
+    padding: 5px;
+    margin: 1px;
+    cursor: pointer;
+    /* Additional styling as needed */
+  }
+  
+.a { 
+    background-color: #98FB98; /* Pastel green for Adenine */
+    color: #004d00; /* Dark green for text */
+} 
+
+.t { 
+    background-color: #FFB6C1; /* Pastel red for Thymine */
+    color: #8B0000; /* Dark red for text */
+} 
+
+.c { 
+    background-color: #ADD8E6; /* Pastel blue for Cytosine */
+    color: #00008B; /* Dark blue for text */
+} 
+
+.g { 
+    background-color: #FFFFE0; /* Pastel yellow for Guanine */
+    color: #8B8B00; /* Dark yellow for text */
+}
+  
+  .hover-details {
+    position: absolute;
+    border: 1px solid #ddd;
+    background-color: #fff;
+    padding: 10px;
+    /* Additional styling as needed */
+  }
+  

@@ -20,7 +20,7 @@ import os
 # Create your views here.
 class PredictionListApiView(APIView):
     permission_classes = [permissions.AllowAny]
-    tokenizer_path = "zhihan1996/DNABERT-2-117M"
+    tokenizer_path = "./best_model/checkpoint-4455"
     model_path = "./best_model/checkpoint-4455"
 
     tokenizer_var = transformers.AutoTokenizer.from_pretrained(
@@ -28,7 +28,8 @@ class PredictionListApiView(APIView):
         model_max_length=100,
         padding_side="right",
         use_fast=True,
-        trust_remote_code=True
+        trust_remote_code=True,
+        local_files_only=True,
     )
     
     model = transformers.AutoModelForSequenceClassification.from_pretrained(
@@ -81,39 +82,41 @@ class PredictionListApiView(APIView):
 
         dna_length = len(dna)
         twenty_mers = []
- 
+
         for i in range(dna_length - 19):
             twenty_mers.append(dna[i:i+20])
- 
+
         df_twenty_mers = pd.DataFrame({'seq' : twenty_mers})
         raw_dataset = datasets.Dataset.from_pandas(df_twenty_mers)
- 
+
         tokenized_dataset = raw_dataset.map(self.tokenize_function, batched=True)
         tokenized_dataset.set_format("torch")
- 
+
         y_preds = []
-       
+
         for row in tokenized_dataset:
-            y_preds.append([
-                row['seq'], 
-                self.model(row["input_ids"].unsqueeze(0), row["attention_mask"].unsqueeze(0))[0].item()
-            ])
-           
-        df_y_preds = pd.DataFrame(y_preds, columns=["seq", "Prediction"])
-        df_y_preds.sort_values(by=['Prediction'], inplace=True, ascending=False)
-        print(df_y_preds)
-        
-        # Sort by prediction score
-        df_y_preds.sort_values(by=['Prediction'], inplace=True, ascending=False)
+            # Include the start index with each prediction
+            y_preds.append({
+                "index": y_preds.__len__(),
+                "sequence": row['seq'],
+                "score": self.model(row["input_ids"].unsqueeze(0), row["attention_mask"].unsqueeze(0))[0].item()
+            })
+
+        # Create a DataFrame from the predictions
+        df_y_preds = pd.DataFrame(y_preds)
+
+        # Sort by prediction score and reset index
+        df_y_preds.sort_values(by=['score'], inplace=True, ascending=False)
         df_y_preds.reset_index(drop=True, inplace=True)
-        df_y_preds.index += 1
-        df_y_preds.rename(columns={"Prediction": "score"}, inplace=True)
 
         # Get the top 10 predictions
         top_10 = df_y_preds.head(10)
 
-        request_body["top_10"] = top_10.to_dict(orient="records")
-        request_body["all_predictions"] = df_y_preds.to_dict(orient="records")
+        request_body = {
+            "dna": dna,
+            "top_10": top_10.to_dict(orient="records"),
+            "all_predictions": df_y_preds.to_dict(orient="records")
+        }
 
         return Response(request_body, status=status.HTTP_201_CREATED)
 

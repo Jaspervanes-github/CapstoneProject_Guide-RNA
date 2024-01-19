@@ -13,7 +13,10 @@
     </div>
   </form>
   <div *ngIf="result != null">
-    <app-data-table [top_10]="result.top_10"></app-data-table>
+    <app-data-table 
+      [all_predictions]="result.all_predictions"
+      [top_10]="result.top_10"
+      [dna]="result.dna"></app-data-table>
   </div>
 </div>
 
