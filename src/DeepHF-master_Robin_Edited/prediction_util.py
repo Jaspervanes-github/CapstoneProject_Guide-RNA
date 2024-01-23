@@ -135,6 +135,7 @@ def custom_predict_fast(inputs, model_type='esp'): #custom function to only eval
 
 def effciency_predict(sequence, model_type='esp'):
     #Remove weird characters
+    sequence = sequence.upper()
     sequence = sequence.strip()
     #print(sequence)
     import re
